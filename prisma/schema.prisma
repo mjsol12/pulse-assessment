@@ -12,11 +12,12 @@ datasource db {
 }
 
 model Presence {
-  id       String   @id // client-generated session uuid
-  lat      Float // ALREADY privacy-offset coords (raw is never stored)
-  lng      Float
-  busy     Boolean  @default(false) // true while in an active connection
-  lastSeen DateTime
+  id            String   @id // client-generated session uuid
+  authTokenHash String? // per-tab bearer token hash; keeps same-browser tabs distinct
+  lat           Float // ALREADY privacy-offset coords (raw is never stored)
+  lng           Float
+  busy          Boolean  @default(false) // true while in an active connection
+  lastSeen      DateTime
 
   @@index([lastSeen])
 }
