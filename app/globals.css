@@ -100,6 +100,78 @@ input {
   }
 }
 
+@keyframes pulse-signal-flow {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+@keyframes pulse-neural-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes pulse-node-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-neural-orbit {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+.pulse-network-link {
+  stroke-dasharray: 3 5;
+  animation: pulse-signal-flow 1.1s linear infinite;
+}
+
+.pulse-network-link--reverse {
+  animation-direction: reverse;
+}
+
+.pulse-network-node {
+  animation: pulse-node-glow 2.4s ease-in-out infinite;
+}
+
+.pulse-neural-link {
+  stroke-dasharray: 3 7;
+  animation: pulse-neural-flow 2.8s linear infinite;
+}
+
+.pulse-neural-link--reverse {
+  animation-direction: reverse;
+}
+
+.pulse-neural-node {
+  animation: pulse-node-glow 3s ease-in-out infinite;
+}
+
+.pulse-neural-chat {
+  animation: pulse-node-glow 2.2s ease-in-out infinite;
+}
+
+.pulse-neural-packet {
+  filter: drop-shadow(0 0 3px rgba(110, 231, 183, 0.55));
+}
+
+.pulse-neural-orbit {
+  animation: pulse-neural-orbit 5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -110,8 +182,206 @@ input {
     animation-iteration-count: 1 !important;
   }
 
-  .pulse-dot::before {
-    animation: none;
+  .pulse-dot::before,
+  .pulse-dot--incoming,
+  .connection-prompt-backdrop,
+  .connection-prompt-dialog,
+  .connection-prompt-enter,
+  .connection-prompt-indicator__ring,
+  .connection-prompt-indicator__core,
+  .connection-prompt-video-icon,
+  .connection-prompt-accept {
+    animation: none !important;
+  }
+}
+
+/* Incoming-connection confirmation dialog */
+.connection-prompt-backdrop {
+  animation: connection-prompt-fade-in 280ms ease-out both;
+}
+
+.connection-prompt-dialog {
+  animation: connection-prompt-dialog-in 480ms cubic-bezier(0.22, 1.1, 0.36, 1) both;
+  animation-delay: 60ms;
+}
+
+.connection-prompt-dialog--connect {
+  box-shadow:
+    0 0 0 1px rgba(110, 231, 183, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(52, 211, 153, 0.12);
+}
+
+.connection-prompt-enter {
+  animation: connection-prompt-content-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.connection-prompt-enter--1 {
+  animation-delay: 120ms;
+}
+
+.connection-prompt-enter--2 {
+  animation-delay: 200ms;
+}
+
+.connection-prompt-enter--3 {
+  animation-delay: 280ms;
+}
+
+.connection-prompt-enter--4 {
+  animation-delay: 360ms;
+}
+
+.connection-prompt-enter--5 {
+  animation-delay: 440ms;
+}
+
+.connection-prompt-indicator {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.connection-prompt-indicator__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(110, 231, 183, 0.55);
+  animation: connection-prompt-ring 2.4s ease-out infinite;
+}
+
+.connection-prompt-indicator__ring--delay-1 {
+  animation-delay: 0.55s;
+}
+
+.connection-prompt-indicator__ring--delay-2 {
+  animation-delay: 1.1s;
+}
+
+.connection-prompt-indicator__core {
+  position: absolute;
+  inset: 1.125rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background: #34d399;
+  animation: connection-prompt-core 1.8s ease-in-out infinite;
+}
+
+.connection-prompt-video-icon {
+  animation:
+    connection-prompt-content-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    connection-prompt-video-pulse 2.2s ease-in-out infinite;
+  animation-delay: 120ms, 800ms;
+}
+
+.connection-prompt-accept {
+  animation: connection-prompt-accept-glow 2.4s ease-in-out infinite;
+  animation-delay: 700ms;
+}
+
+@keyframes connection-prompt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes connection-prompt-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes connection-prompt-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes connection-prompt-ring {
+  0% {
+    transform: scale(0.68);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes connection-prompt-core {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 12px rgba(52, 211, 153, 0.35),
+      0 0 0 0 rgba(110, 231, 183, 0.35);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 22px rgba(52, 211, 153, 0.55),
+      0 0 0 6px rgba(110, 231, 183, 0);
+  }
+}
+
+@keyframes connection-prompt-accept-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+  }
+}
+
+@keyframes connection-prompt-video-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(110, 231, 183, 0);
+  }
+}
+
+.pulse-dot--incoming {
+  animation: pulse-dot-incoming-bounce 1.8s ease-in-out infinite;
+}
+
+.pulse-dot--incoming::before {
+  border-color: #6ee7b7;
+  box-shadow:
+    0 0 0 0 rgba(110, 231, 183, 0.55),
+    0 0 14px rgba(52, 211, 153, 0.55);
+  animation: pulse-ring 1.1s ease-out infinite;
+}
+
+@keyframes pulse-dot-incoming-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
   }
 }
 

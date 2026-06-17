@@ -17,16 +17,46 @@ function dotColor(id: string): string {
   return `hsl(${Math.abs(hash) % 360}, 70%, 60%)`;
 }
 
+function LoadingDots() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setActive((current) => (current + 1) % 3);
+    }, 350);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <span className="inline-flex" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="inline-block w-[0.35em] text-center"
+          style={{
+            opacity: i === active ? 1 : 0.25,
+            transform: i === active ? "translateY(-3px)" : "translateY(0)",
+          }}
+        >
+          .
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function WorldMap({
   peers,
   me,
   onPeerClick,
   canConnect,
+  highlightPeerId = null,
 }: {
   peers: PeerDot[];
   me: { lat: number; lng: number } | null;
   onPeerClick: (id: string) => void;
   canConnect: boolean;
+  highlightPeerId?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -96,7 +126,10 @@ export default function WorldMap({
         el.title = "You are here";
         el.innerHTML = `<span class="pulse-me-label">Me</span>📍`;
         // anchor "bottom" → the pin's tip sits on the exact coordinate.
-        meMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        meMarkerRef.current = new mapboxgl.Marker({
+          element: el,
+          anchor: "bottom",
+        })
           .setLngLat([me.lng, me.lat])
           .addTo(map);
       } else {
@@ -140,6 +173,10 @@ export default function WorldMap({
           markers.set(peer.id, marker);
         }
         const element = marker.getElement() as HTMLButtonElement;
+        element.classList.toggle(
+          "pulse-dot--incoming",
+          peer.id === highlightPeerId,
+        );
         element.disabled = peer.busy || !canConnect;
         element.title = peer.busy
           ? "This stranger is already connected"
@@ -169,7 +206,7 @@ export default function WorldMap({
     return () => {
       cancelled = true;
     };
-  }, [peers, ready, canConnect]);
+  }, [peers, ready, canConnect, highlightPeerId]);
 
   return (
     <div className="absolute inset-0">
@@ -177,8 +214,12 @@ export default function WorldMap({
 
       {!ready && TOKEN && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/40 p-6 text-center">
-          <div className="rounded-2xl border border-white/10 bg-zinc-950/85 px-5 py-4 text-sm text-zinc-300 shadow-2xl backdrop-blur">
-            Loading live map...
+          <div
+            role="status"
+            className="rounded-2xl border border-white/10 bg-zinc-950/85 px-5 py-4 text-sm text-zinc-300 shadow-2xl backdrop-blur"
+          >
+            Loading live map
+            <LoadingDots />
           </div>
         </div>
       )}
@@ -187,8 +228,8 @@ export default function WorldMap({
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
           <p className="max-w-md rounded-2xl border border-white/10 bg-zinc-950/90 p-4 text-sm leading-6 text-zinc-200 shadow-2xl">
             Set{" "}
-            <code className="text-emerald-400">NEXT_PUBLIC_MAPBOX_TOKEN</code> in{" "}
-            <code>.env</code> to load the map.
+            <code className="text-emerald-400">NEXT_PUBLIC_MAPBOX_TOKEN</code>{" "}
+            in <code>.env</code> to load the map.
           </p>
         </div>
       )}

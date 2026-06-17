@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import EntryGate from "./components/EntryGate";
 import ConnectionPrompt from "./components/ConnectionPrompt";
+import AlertSettings from "./components/AlertSettings";
 import WorldMap from "@/components/templates/world-map";
 import ChatPanel, { type ChatMessage } from "@/components/templates/chat-panel";
 import VideoPanel from "@/components/templates/video-panel";
 import { join, leave, poll, sendSignal } from "@/lib/api";
+import {
+  DEFAULT_ALERT_PREFS,
+  playMessageTone,
+  startIncomingAlert,
+  stopIncomingAlert,
+  type AlertPrefs,
+} from "@/lib/alerts";
 import { PeerSession, type DescType, type PeerControl } from "@/lib/webrtc";
 import { POLL_INTERVAL_MS } from "@/lib/presence";
 import { type PeerDot, type SignalMsg } from "@/lib/types";
@@ -52,6 +60,18 @@ export default function Home() {
   const peerRef = useRef<PeerSession | null>(null);
   const msgId = useRef(0);
   const requestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const alertPrefsRef = useRef<AlertPrefs>(DEFAULT_ALERT_PREFS);
+
+  const handleAlertPrefsChange = useCallback((prefs: AlertPrefs) => {
+    alertPrefsRef.current = prefs;
+    const incoming =
+      connRef.current.kind === "incoming"
+        ? ("connect" as const)
+        : videoRef.current === "incoming"
+          ? ("video" as const)
+          : null;
+    if (incoming) startIncomingAlert(incoming, prefs);
+  }, []);
 
   function showNotice(text: string) {
     setNotice(text);
@@ -79,7 +99,10 @@ export default function Home() {
       onSignal: (type: DescType, payload: string) => {
         void sendSignal(sessionId, peerId, type, payload);
       },
-      onChat: (text) => addMessage(false, text),
+      onChat: (text) => {
+        addMessage(false, text);
+        if (alertPrefsRef.current.messageSound) playMessageTone();
+      },
       onControl: (ctrl) => handleControl(ctrl),
       onRemoteStream: (stream) => setRemoteStream(stream),
       onConnectionState: (state) => {
@@ -304,6 +327,26 @@ export default function Home() {
     };
   }, [sessionId, phase]);
 
+  useEffect(() => {
+    const incoming =
+      conn.kind === "incoming"
+        ? ("connect" as const)
+        : video === "incoming"
+          ? ("video" as const)
+          : null;
+
+    if (!incoming) {
+      stopIncomingAlert();
+      return;
+    }
+
+    startIncomingAlert(incoming, alertPrefsRef.current);
+
+    return () => {
+      stopIncomingAlert();
+    };
+  }, [conn.kind, video]);
+
   async function handleReady(lat: number, lng: number) {
     setMyLocation({ lat, lng });
     await join(sessionId, lat, lng);
@@ -326,6 +369,12 @@ export default function Home() {
         me={myLocation}
         onPeerClick={requestConnection}
         canConnect={conn.kind === "idle"}
+        highlightPeerId={conn.kind === "incoming" ? conn.peerId : null}
+      />
+
+      <AlertSettings
+        onPrefsChange={handleAlertPrefsChange}
+        onNotice={showNotice}
       />
 
       {notice && (
@@ -356,7 +405,9 @@ export default function Home() {
 
       {conn.kind === "incoming" && (
         <ConnectionPrompt
+          variant="connect"
           title="A stranger wants to connect"
+          subtitle="Accept to start an anonymous chat. Nothing is saved."
           acceptLabel="Accept"
           declineLabel="Decline"
           onAccept={acceptIncoming}
@@ -389,6 +440,7 @@ export default function Home() {
 
       {video === "incoming" && (
         <ConnectionPrompt
+          variant="video"
           title="Start video call?"
           subtitle="The stranger wants to turn on video."
           acceptLabel="Accept"
