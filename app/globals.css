@@ -114,3 +114,31 @@ input {
     animation: none;
   }
 }
+
+.chat-panel {
+  transition:
+    transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 240ms ease;
+  will-change: transform, opacity;
+}
+
+.chat-panel[data-state="closed"] {
+  opacity: 0;
+  transform: translateY(calc(100% + 0.75rem));
+  pointer-events: none;
+}
+
+.chat-panel[data-state="open"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .chat-panel[data-state="closed"] {
+    transform: translateX(calc(100% + 1rem));
+  }
+
+  .chat-panel[data-state="open"] {
+    transform: translateX(0);
+  }
+}

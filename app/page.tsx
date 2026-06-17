@@ -364,19 +364,18 @@ export default function Home() {
         />
       )}
 
-      {inChat && (
-        <ChatPanel
-          messages={messages}
-          connected={conn.kind === "connected"}
-          videoBusy={video !== "none"}
-          onSend={(text) => {
-            peerRef.current?.sendChat(text);
-            addMessage(true, text);
-          }}
-          onStartVideo={startVideoRequest}
-          onEnd={endConnection}
-        />
-      )}
+      <ChatPanel
+        open={inChat}
+        messages={messages}
+        connected={conn.kind === "connected"}
+        videoBusy={video !== "none"}
+        onSend={(text) => {
+          peerRef.current?.sendChat(text);
+          addMessage(true, text);
+        }}
+        onStartVideo={startVideoRequest}
+        onEnd={endConnection}
+      />
 
       {video === "requesting" && (
         <div
