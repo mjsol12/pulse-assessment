@@ -288,6 +288,16 @@ Optional alert tones for incoming connection/video requests and each received ch
 
 ---
 
+### Light mode UI (new feature)
+
+Added an explicit light mode while keeping dark mode as the default. The theme is stored in `localStorage`, applied on the root `data-theme` attribute before hydration to avoid a flash, and controlled through an icon-only toggle on the entry screen and live map. Tailwind's custom `light:` variant drives the alternate palette.
+
+Mapbox now switches between `dark-v11` and `light-v11` with the selected theme. Main surfaces have light-mode variants: entry gate, map overlays, alert panel, chat panel, request/notice popups, connection prompts, loading shells, and video waiting states. Bottom request/notice popups also share a small entrance animation with reduced-motion support.
+
+**Files:** `app/globals.css`, `app/layout.tsx`, `app/components/EntryGate.tsx`, `components/ui/theme.ts`, `components/ui/ThemeToggle.tsx`, `components/ui/Button.tsx`, `components/ui/AlertSettings.tsx`, `components/templates/WordMap.tsx`, `components/templates/ChatPanel.tsx`, `features/live/LiveSession.tsx`, `features/live/components/*`.
+
+---
+
 ### Risk register review
 
 Audit of the known coordination / WebRTC risks against the current codebase.
