@@ -68,8 +68,9 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 
 #### Session binding (`lib/session.ts`)
 
-- `POST /api/join` issues a random per-tab session token and stores only its SHA-256 hash in `Presence.authTokenHash`.
-- `GET /api/poll`, `POST /api/signal`, and `POST /api/leave` authenticate via `x-pulse-session-id` / `x-pulse-session-token`; the old HttpOnly cookie path is kept as a fallback.
+- `POST /api/join` creates a new presence row, issues a random per-tab session token, and stores only its SHA-256 hash in `Presence.authTokenHash`.
+- `POST /api/join` rejects an existing session id instead of resetting its token, so exposed peer ids cannot be claimed by another client.
+- `GET /api/poll`, `POST /api/signal`, and `POST /api/leave` authenticate only via `x-pulse-session-id` / `x-pulse-session-token`; cookie-only identity was removed.
 - `fromId` on signal and `id` on leave must match the authenticated session or the request is rejected (403).
 - Poll identity is derived from authenticated session state — removed client-supplied `?id=` parameter.
 
@@ -108,9 +109,9 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 
 | File                      | Change                                                                     |
 | ------------------------- | -------------------------------------------------------------------------- |
-| `lib/session.ts`          | New — per-tab token auth, cookie fallback, session validation, client IP   |
+| `lib/session.ts`          | New — per-tab token auth, session validation, client IP                    |
 | `lib/rate-limit.ts`       | New — in-memory rate limiter                                               |
-| `app/api/join/route.ts`   | Issue per-tab session token; set fallback cookie; rate limit               |
+| `app/api/join/route.ts`   | Create-only join; issue per-tab session token; rate limit                  |
 | `app/api/poll/route.ts`   | Authenticated poll; scoped heartbeat; retain `request` signals on drain    |
 | `app/api/signal/route.ts` | Authenticated signal relay; authorization rules; busy on `end`; rate limit |
 | `app/api/leave/route.ts`  | Authenticated leave; id must match session; rate limit                     |
@@ -260,7 +261,7 @@ Routes now delegate after `requireSession` / rate limiting; services own heartbe
 | `lib/services/signal.ts`  | New — signal delivery and authorization            |
 | `lib/utils/signal.ts`     | New — body parsing and signal constants            |
 | `lib/session.ts`          | Auth lookup via presence db module                 |
-| `app/api/join/route.ts`   | Thin handler → `presenceDb.upsertOnJoin`           |
+| `app/api/join/route.ts`   | Thin handler → `presenceDb.createOnJoin`           |
 | `app/api/leave/route.ts`  | Thin handler → db cleanup helpers                  |
 | `app/api/poll/route.ts`   | Thin handler → `getPollResponse`                   |
 | `app/api/signal/route.ts` | Thin handler → `parseSignalBody` + `deliverSignal` |
@@ -307,6 +308,6 @@ Audit of the known coordination / WebRTC risks against the current codebase.
 | `app/api/poll/route.ts` heartbeat | Known bug — `updateMany({ where: {} })` refreshed all users and broke stale detection | **Fixed** (Phase 1) | Global heartbeat kept every presence row fresh; the stale reaper never deleted ghost dots. | `presenceDb.heartbeat(sessionId)` scopes to the caller: `updateMany({ where: { id: sessionId } })` in `lib/db/presence.ts`. Poll route delegates via `getPollResponse()`. |
 | `lib/webrtc.ts` chat protocol | Known bug — sent `t: "msg"`, receiver expected `t: "chat"` | **Fixed** (Phase 1) | Outgoing chat was silently dropped on the peer. | `sendChat()` emits `{ t: "chat", text }`; receiver checks `msg.t === "chat"` in `wireDataChannel()`. |
 | `app/api/signal/route.ts` busy handling | Known bug — `end` did not clear `busy` | **Fixed** (Phase 1) | Users could appear permanently busy after hang-up. | `end` is a lifecycle type in `deliverSignal()`; non-`accept` lifecycle signals call `setBusyForPeers(..., false)` for both peers (`lib/services/signal.ts`). |
-| Signal spoofing | Security — no session token; any client could send as any `fromId` | **Fixed** (Phase 1) | IDOR on all coordination routes: impersonation, mailbox drain, busy manipulation, WebRTC signal injection. | Per-tab bearer token (`authTokenHash` on `Presence`); `requireSession()` on poll/signal/leave; `parseSignalBody()` rejects `fromId !== sessionId` (403). Rate limits on signal/join. **Residual:** legacy HttpOnly cookie fallback is weaker than the per-tab token — clients should use `x-pulse-session-id` + `x-pulse-session-token`. |
+| Signal spoofing | Security — no session token; any client could send as any `fromId` | **Fixed** (Phase 1) | IDOR on all coordination routes: impersonation, mailbox drain, busy manipulation, WebRTC signal injection. | Per-tab bearer token (`authTokenHash` on `Presence`); `requireSession()` on poll/signal/leave; `parseSignalBody()` rejects `fromId !== sessionId` (403). `join` is create-only and rejects existing ids, so a visible peer id cannot be used to reset its token. Rate limits on signal/join. |
 | Poll + signal race | Reliability — inbox drain/delete ordering; concurrent inserts | **Fixed** (Phase 4) | `drainInbox` used read-then-delete; two concurrent polls could return the same non-`request` signal twice (or lose ordering guarantees under load). | `drainInbox` now atomically claims deliverable rows with `DELETE … RETURNING` in `lib/db/signal.ts`. Pending `request` rows are still re-read each poll (by design) so accept/decline authorization can verify them; client ignores duplicate incoming requests (`useLiveSession.ts`, Phase 3). Lifecycle signals are still inserted before pending-request cleanup in `deliverSignal()`. |
 | PeerSession negotiation | WebRTC complexity — offer collision, ICE ordering, polite peer | **Mitigated** (Phase 1) | Simultaneous offers, early ICE before remote SDP, and glare can prevent P2P setup. | `PeerSession` in `lib/webrtc.ts`: polite peer (`polite = !initiator`), `ignoreOffer` on impolite glare, ICE queued until `setRemoteDescription()` then flushed, `onnegotiationneeded` for offers. **Residual:** no TURN server (NAT-restricted networks may still fail); errors in `addIceCandidate` / JSON parse are swallowed — acceptable for anonymous ephemeral chat but worth monitoring in production. |
