@@ -179,6 +179,18 @@ Timing: 320ms transform (`cubic-bezier(0.32, 0.72, 0, 1)`), 240ms opacity. Close
 
 ## Phase 3
 
+### Issues found (ranked)
+
+Repo scan during Phase 3 security review.
+
+| Issue | Severity | Location | Impact |
+| ----- | -------- | -------- | ------ |
+| Hardcoded Mapbox token fallback | Medium | `components/templates/WordMap.tsx` (also in git history as `app/components/WorldMap.tsx`, `components/templates/world-map.tsx`) | Starter `pk.eyJ…` token shipped in source as a `??` fallback when `NEXT_PUBLIC_MAPBOX_TOKEN` was unset — committed to git and usable by anyone who clones the repo (Mapbox quota abuse). Real `.env` credentials were gitignored and not in history. |
+
+**Fix:** Removed the hardcoded fallback; map loads only when `NEXT_PUBLIC_MAPBOX_TOKEN` is set in `.env`. Demo token may still exist in older commits — rotate or scrub history if publishing publicly.
+
+---
+
 ### Architectural optimization (coordination API)
 
 Before deepening the security review, the four coordination routes were refactored into a thin-handler / service / data-access layout so authorization and state rules are easier to audit and change in one place.
