@@ -136,9 +136,30 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 - Entry gate: card-based onboarding with clearer privacy copy and accessible error states.
 - Live map: loading overlay, onboarding hint, online count, larger peer touch targets, busy/disabled labels.
 - Chat: mobile bottom sheet + desktop side panel; labeled input; shared `Button` component.
+- **Chat panel enter/exit transitions** — opening a connection now animates the chat UI in and out instead of popping in instantly (see below).
 - Connection/video prompts: accessible dialog semantics, focus management, Escape to decline.
 - Status banners and video overlay: `aria-live` regions, focus-visible rings, reduced-motion support.
 - Component layout: shared UI in `components/ui/`, feature templates in `components/templates/`.
+
+### Chat panel transitions
+
+When a connection starts or ends, the chat panel no longer mounts/unmounts instantly. `ChatPanel` takes an `open` prop from `app/page.tsx` (`open={inChat}`) and drives a two-phase show/hide:
+
+1. **Open** — `requestAnimationFrame` sets `mounted` (panel enters the DOM), then a second frame sets `visible` so CSS can transition from the closed state.
+2. **Close** — `visible` flips false first; `onTransitionEnd` unmounts after the animation completes so the exit is visible.
+
+State is exposed on the root `<section>` as `data-state="open" | "closed"` and `aria-hidden` when closed. Styles live in `app/globals.css` under `.chat-panel`:
+
+| Viewport | Closed | Open |
+|----------|--------|------|
+| Mobile (`< md`) | `translateY(100%)` + fade — slides down off-screen | `translateY(0)` + full opacity |
+| Desktop (`≥ md`) | `translateX(100%)` + fade — slides in from the right | `translateX(0)` + full opacity |
+
+Timing: 320ms transform (`cubic-bezier(0.32, 0.72, 0, 1)`), 240ms opacity. Closed panels use `pointer-events: none` so they do not block map taps during the exit animation.
+
+**Reduced motion:** the global `prefers-reduced-motion: reduce` block shortens all transitions/animations to ~0ms, so the panel still opens and closes functionally without sliding.
+
+**Files:** `components/templates/chat-panel.tsx` (mount/visible lifecycle), `app/globals.css` (`.chat-panel` rules), `app/page.tsx` (`open` wiring).
 
 ### Design rationale
 
@@ -149,6 +170,7 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 ### Trade-offs
 
 - No new UI library — Tailwind-only to avoid dependency bloat; less animation/theming flexibility than a full design system.
+- Chat transitions are CSS-only (no motion library); enter/exit timing is fixed rather than gesture-driven.
 - Map-first interaction remains hard for keyboard users; no separate peer list yet.
 - Dialog focus trapping is lightweight (no dedicated focus-trap library).
 - `EntryGate` and `ConnectionPrompt` still live under `app/components/`; only larger templates were moved to `components/templates/`.
