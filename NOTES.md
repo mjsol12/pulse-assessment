@@ -174,3 +174,63 @@ Timing: 320ms transform (`cubic-bezier(0.32, 0.72, 0, 1)`), 240ms opacity. Close
 - Map-first interaction remains hard for keyboard users; no separate peer list yet.
 - Dialog focus trapping is lightweight (no dedicated focus-trap library).
 - `EntryGate` and `ConnectionPrompt` still live under `app/components/`; only larger templates were moved to `components/templates/`.
+
+---
+
+## Phase 3
+
+### Architectural optimization (coordination API)
+
+Before deepening the security review, the four coordination routes were refactored into a thin-handler / service / data-access layout so authorization and state rules are easier to audit and change in one place.
+
+#### Problem
+
+`app/api/poll/route.ts` and `app/api/signal/route.ts` each carried ~100+ lines of Prisma calls, validation, and business rules inline. That made Phase 3 review noisy: HTTP wiring, DB access, and security policy were interleaved, and the same Prisma patterns were duplicated across routes.
+
+#### Layering
+
+| Layer | Role | Modules |
+|-------|------|---------|
+| Route handlers | Auth, rate limits, JSON I/O | `app/api/{join,leave,poll,signal}/route.ts` |
+| Services | Orchestration and policy | `lib/services/poll.ts`, `lib/services/signal.ts` |
+| Data access | Prisma only, no HTTP | `lib/db/presence.ts`, `lib/db/signal.ts` |
+| Utils | Parsing and shared constants | `lib/utils/signal.ts` |
+
+Routes now delegate after `requireSession` / rate limiting; services own heartbeat + reap, mailbox drain, busy transitions, and signal authorization checks.
+
+#### What moved where
+
+- **Presence** — join upsert, heartbeat, stale reap, peer listing, busy flags, session cleanup → `lib/db/presence.ts`
+- **Signals** — inbox drain, TTL reap, pending-request lookup, lifecycle cleanup → `lib/db/signal.ts`
+- **Poll loop** — heartbeat → reap → parallel peer list + mailbox drain → `lib/services/poll.ts`
+- **Signal delivery** — busy checks, pending-request gate, lifecycle ordering → `lib/services/signal.ts`
+- **Input validation** — type allowlist, payload cap, session id checks → `lib/utils/signal.ts`
+- **Session auth** — token hash lookup now goes through `presenceDb.findAuthTokenHash` in `lib/session.ts`
+
+#### Behavioral notes (unchanged contract)
+
+- No public API or client changes; same endpoints, status codes, and JSON shapes.
+- Independent deletes remain (no transactions) — still required for PgBouncer / serverless poolers.
+- Lifecycle signals (`accept` / `decline` / `end`) are **delivered before** the pending `request` row is deleted so the recipient always receives the resolution event used for server-side authorization.
+
+#### Why this helps Phase 3
+
+- Security rules for signaling live in `deliverSignal()` instead of being scattered through a route file.
+- DB surface area is named (`drainInbox`, `deletePendingBetween`, `setBusyForPeers`) — easier to grep during review.
+- Services can be unit-tested without mocking Next.js request objects.
+- Future hardening (shared rate-limit store, stricter validation, audit logging) has clear insertion points.
+
+#### Files touched
+
+| File | Change |
+|------|--------|
+| `lib/db/presence.ts` | New — presence CRUD and queries |
+| `lib/db/signal.ts` | New — signal mailbox and lifecycle queries |
+| `lib/services/poll.ts` | New — poll orchestration |
+| `lib/services/signal.ts` | New — signal delivery and authorization |
+| `lib/utils/signal.ts` | New — body parsing and signal constants |
+| `lib/session.ts` | Auth lookup via presence db module |
+| `app/api/join/route.ts` | Thin handler → `presenceDb.upsertOnJoin` |
+| `app/api/leave/route.ts` | Thin handler → db cleanup helpers |
+| `app/api/poll/route.ts` | Thin handler → `getPollResponse` |
+| `app/api/signal/route.ts` | Thin handler → `parseSignalBody` + `deliverSignal` |

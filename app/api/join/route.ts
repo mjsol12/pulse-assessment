@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import * as presenceDb from "@/lib/db/presence";
 import { applyPrivacyOffset, isValidLatLng } from "@/lib/geo";
 import {
   clientIp,
@@ -43,22 +43,11 @@ export async function POST(request: NextRequest) {
   const offset = applyPrivacyOffset(lat as number, lng as number);
   const sessionToken = newSessionToken();
 
-  await prisma.presence.upsert({
-    where: { id },
-    create: {
-      id,
-      authTokenHash: hashSessionToken(sessionToken),
-      lat: offset.lat,
-      lng: offset.lng,
-      busy: false,
-      lastSeen: new Date(),
-    },
-    update: {
-      authTokenHash: hashSessionToken(sessionToken),
-      lat: offset.lat,
-      lng: offset.lng,
-      lastSeen: new Date(),
-    },
+  await presenceDb.upsertOnJoin({
+    id,
+    authTokenHash: hashSessionToken(sessionToken),
+    lat: offset.lat,
+    lng: offset.lng,
   });
 
   const response = NextResponse.json({ ok: true, sessionToken });

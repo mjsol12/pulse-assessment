@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import * as presenceDb from "@/lib/db/presence";
+import * as signalDb from "@/lib/db/signal";
 import { requireSession } from "@/lib/session";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -28,12 +29,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
 
-  // Independent cleanup deletes — no atomicity needed (and interactive
-  // transactions are unreliable over a PgBouncer pooler).
-  await prisma.signal.deleteMany({
-    where: { OR: [{ toId: id }, { fromId: id }] },
-  });
-  await prisma.presence.deleteMany({ where: { id } });
+  await signalDb.deleteForSession(id);
+  await presenceDb.deleteById(id);
 
   return Response.json({ ok: true });
 }

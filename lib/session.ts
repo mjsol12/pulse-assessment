@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { createHash, randomBytes } from "node:crypto";
-import { prisma } from "@/lib/prisma";
+import * as presenceDb from "@/lib/db/presence";
 
 export const SESSION_COOKIE = "pulse_session";
 export const SESSION_ID_HEADER = "x-pulse-session-id";
@@ -44,10 +44,7 @@ export async function requireSession(
   const headerId = request.headers.get(SESSION_ID_HEADER);
   const headerToken = request.headers.get(SESSION_TOKEN_HEADER);
   if (isValidSessionId(headerId) && isValidSessionToken(headerToken)) {
-    const presence = await prisma.presence.findUnique({
-      where: { id: headerId },
-      select: { authTokenHash: true },
-    });
+    const presence = await presenceDb.findAuthTokenHash(headerId);
     if (presence?.authTokenHash === hashSessionToken(headerToken)) {
       return { sessionId: headerId };
     }
