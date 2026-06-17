@@ -1,4 +1,8 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import {
+  forwardRef,
+  type ButtonHTMLAttributes,
+  type ReactNode,
+} from "react";
 
 type ButtonVariant = "primary" | "secondary" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
@@ -16,26 +20,77 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "min-h-10 px-3 py-1.5 text-sm",
-  md: "min-h-11 px-4 py-2 text-sm",
-  lg: "min-h-12 px-8 py-3 text-base",
+  sm: "min-h-10 text-sm",
+  md: "min-h-11 text-sm",
+  lg: "min-h-12 text-base",
+};
+
+const sizePadding: Record<ButtonSize, string> = {
+  sm: "px-3 py-1.5",
+  md: "px-4 py-2",
+  lg: "px-8 py-3",
+};
+
+const iconOnlyPadding: Record<ButtonSize, string> = {
+  sm: "min-w-10 px-0 py-1.5 md:min-w-0 md:px-3",
+  md: "min-w-11 px-0 py-2 md:min-w-0 md:px-4",
+  lg: "min-w-12 px-0 py-3 md:min-w-0 md:px-8",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  icon?: ReactNode;
+  /** Icon on all viewports; label visible from md breakpoint up. */
+  responsiveLabel?: boolean;
+}
+
+function buttonLabel(children: ReactNode): string | undefined {
+  if (typeof children === "string") return children;
+  return undefined;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size = "md", className = "", type = "button", ...props },
+  {
+    variant = "primary",
+    size = "md",
+    icon,
+    responsiveLabel = false,
+    className = "",
+    type = "button",
+    children,
+    ...props
+  },
   ref,
 ) {
+  const label = buttonLabel(children);
+  const useResponsive = responsiveLabel && icon && label;
+
   return (
     <button
       ref={ref}
       type={type}
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`.trim()}
+      aria-label={useResponsive ? label : undefined}
+      className={[
+        base,
+        variants[variant],
+        sizes[size],
+        useResponsive ? iconOnlyPadding[size] : sizePadding[size],
+        useResponsive ? "gap-0 md:gap-2" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       {...props}
-    />
+    >
+      {icon}
+      {useResponsive ? (
+        <span className="hidden md:inline" aria-hidden="true">
+          {children}
+        </span>
+      ) : (
+        children
+      )}
+    </button>
   );
 });

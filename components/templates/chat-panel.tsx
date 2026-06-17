@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { EndCallIcon, SendIcon, VideoIcon } from "@/components/ui/icons";
 
 export interface ChatMessage {
   id: number;
@@ -58,12 +59,20 @@ export default function ChatPanel({
           <Button
             variant="secondary"
             size="sm"
+            icon={<VideoIcon />}
+            responsiveLabel
             onClick={onStartVideo}
             disabled={!connected || videoBusy}
           >
             Video
           </Button>
-          <Button variant="danger" size="sm" onClick={onEnd}>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<EndCallIcon />}
+            responsiveLabel
+            onClick={onEnd}
+          >
             End
           </Button>
         </div>
@@ -111,7 +120,12 @@ export default function ChatPanel({
           disabled={!connected}
           className="min-h-11 min-w-0 flex-1 rounded-full border border-white/10 bg-zinc-900 px-4 py-2 text-sm outline-none placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:text-zinc-500"
         />
-        <Button type="submit" disabled={!connected || !draft.trim()}>
+        <Button
+          type="submit"
+          icon={<SendIcon />}
+          responsiveLabel
+          disabled={!connected || !draft.trim()}
+        >
           Send
         </Button>
       </form>

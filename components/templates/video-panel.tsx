@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { EndCallIcon } from "@/components/ui/icons";
 
 export default function VideoPanel({
   localStream,
@@ -58,12 +60,15 @@ export default function VideoPanel({
         />
       </div>
       <div className="flex justify-center border-t border-white/10 bg-zinc-950/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <button
+        <Button
+          variant="danger"
+          size="lg"
+          icon={<EndCallIcon className="h-5 w-5" />}
+          responsiveLabel
           onClick={onEnd}
-          className="min-h-12 rounded-full bg-red-500 px-8 py-3 font-semibold text-white transition hover:bg-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         >
           End video
-        </button>
+        </Button>
       </div>
     </div>
   );
