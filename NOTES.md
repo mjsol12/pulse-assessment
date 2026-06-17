@@ -186,8 +186,26 @@ Repo scan during Phase 3 security review.
 | Issue | Severity | Location | Impact |
 | ----- | -------- | -------- | ------ |
 | Hardcoded Mapbox token fallback | Medium | `components/templates/WordMap.tsx` (also in git history as `app/components/WorldMap.tsx`, `components/templates/world-map.tsx`) | Starter `pk.eyJ…` token shipped in source as a `??` fallback when `NEXT_PUBLIC_MAPBOX_TOKEN` was unset — committed to git and usable by anyone who clones the repo (Mapbox quota abuse). Real `.env` credentials were gitignored and not in history. |
+| Incoming connection prompt stuck after ignore / expiry | High | `features/live/useLiveSession.ts` | Violates requirement: “If a request is declined or ignored, the initiator is notified.” Recipient could be left with an open connection prompt forever after ignoring or after the initiator’s request timed out. |
 
-**Fix:** Removed the hardcoded fallback; map loads only when `NEXT_PUBLIC_MAPBOX_TOKEN` is set in `.env`. Demo token may still exist in older commits — rotate or scrub history if publishing publicly.
+#### 1. Hardcoded Mapbox token fallback (fixed)
+
+- **How found:** Repo scan during Phase 3 security review.
+- **Root cause:** Starter `pk.eyJ…` token shipped in source as a `??` fallback when `NEXT_PUBLIC_MAPBOX_TOKEN` was unset — committed to git and usable by anyone who clones the repo (Mapbox quota abuse).
+- **Fix:** Removed the hardcoded `??` fallback in `components/templates/WordMap.tsx`; map loads only when `NEXT_PUBLIC_MAPBOX_TOKEN` is set in `.env`. Demo token may still exist in older commits — rotate or scrub history if publishing publicly.
+- **Files:** `components/templates/WordMap.tsx`
+
+#### 2. Incoming connection prompt stuck after ignore / expiry (fixed)
+
+- **How found:** Reproduced two-browser flow — recipient leaves the incoming prompt open without accepting or declining; initiator eventually sees “No answer” or “Request declined”, but the recipient’s `ConnectionPrompt` stays on screen.
+- **Root cause:** `request` rows are intentionally retained in the mailbox until `accept` / `decline` / `end` (see `lib/db/signal.ts` `drainInbox`). Every poll re-delivered the same `request` to the client. In `processSignal`, a replay while already `incoming` hit the `else` branch and auto-sent `decline` to the initiator, but **never cleared the recipient’s `incoming` state** — so the initiator was notified while the prompt remained open. If the initiator instead timed out and sent `end`, the recipient could still miss dismissal when that signal was lost between polls.
+- **Fix:** In `features/live/useLiveSession.ts`:
+  - Ignore duplicate `request` replays from the same peer when already showing the incoming prompt.
+  - Start an `incomingTimer` when the prompt opens; on expiry, dismiss the prompt and send `decline`.
+  - Clear the incoming timer on accept, decline, `end`, and teardown.
+  - Suppress the just-resolved peer while `accept` / `decline` is in flight so a retained `request` from the next poll cannot reopen the same prompt after the user clicks Decline.
+  - Treat duplicate stale `decline` signals as idempotent success on the server, while keeping `accept` gated on a pending request.
+- **Files:** `features/live/useLiveSession.ts`, `lib/services/signal.ts`
 
 ---
 
@@ -222,7 +240,7 @@ Routes now delegate after `requireSession` / rate limiting; services own heartbe
 #### Behavioral notes (unchanged contract)
 
 - No public API or client changes; same endpoints, status codes, and JSON shapes.
-- Independent deletes remain (no transactions) — still required for PgBouncer / serverless poolers.
+- Independent deletes remain for most multi-step flows (no transactions) — still required for PgBouncer / serverless poolers. **Exception:** `drainInbox` uses a single-statement `DELETE … RETURNING` so mailbox delivery is atomic (see Risk register review).
 - Lifecycle signals (`accept` / `decline` / `end`) are **delivered before** the pending `request` row is deleted so the recipient always receives the resolution event used for server-side authorization.
 
 #### Why this helps Phase 3
@@ -267,3 +285,18 @@ Full layout and diagrams: [docs/project-structure.md](docs/project-structure.md)
 Optional alert tones for incoming connection/video requests and each received chat message, plus desktop notifications when the tab is in the background. Toggles live in the **Alerts** panel (top-right on desktop); preferences persist in `localStorage`. Incoming requests also get an animated prompt, caller dot highlight on the map, and repeating chime until accept/decline.
 
 **Files:** `lib/alerts.ts`, `app/components/AlertSettings.tsx`, `app/components/ConnectionPrompt.tsx`, `app/page.tsx`, `app/globals.css`, `components/templates/world-map.tsx`.
+
+---
+
+### Risk register review
+
+Audit of the known coordination / WebRTC risks against the current codebase.
+
+| Area | Risk | Status | Issue | Fix / mitigation |
+| ---- | ---- | ------ | ----- | ---------------- |
+| `app/api/poll/route.ts` heartbeat | Known bug — `updateMany({ where: {} })` refreshed all users and broke stale detection | **Fixed** (Phase 1) | Global heartbeat kept every presence row fresh; the stale reaper never deleted ghost dots. | `presenceDb.heartbeat(sessionId)` scopes to the caller: `updateMany({ where: { id: sessionId } })` in `lib/db/presence.ts`. Poll route delegates via `getPollResponse()`. |
+| `lib/webrtc.ts` chat protocol | Known bug — sent `t: "msg"`, receiver expected `t: "chat"` | **Fixed** (Phase 1) | Outgoing chat was silently dropped on the peer. | `sendChat()` emits `{ t: "chat", text }`; receiver checks `msg.t === "chat"` in `wireDataChannel()`. |
+| `app/api/signal/route.ts` busy handling | Known bug — `end` did not clear `busy` | **Fixed** (Phase 1) | Users could appear permanently busy after hang-up. | `end` is a lifecycle type in `deliverSignal()`; non-`accept` lifecycle signals call `setBusyForPeers(..., false)` for both peers (`lib/services/signal.ts`). |
+| Signal spoofing | Security — no session token; any client could send as any `fromId` | **Fixed** (Phase 1) | IDOR on all coordination routes: impersonation, mailbox drain, busy manipulation, WebRTC signal injection. | Per-tab bearer token (`authTokenHash` on `Presence`); `requireSession()` on poll/signal/leave; `parseSignalBody()` rejects `fromId !== sessionId` (403). Rate limits on signal/join. **Residual:** legacy HttpOnly cookie fallback is weaker than the per-tab token — clients should use `x-pulse-session-id` + `x-pulse-session-token`. |
+| Poll + signal race | Reliability — inbox drain/delete ordering; concurrent inserts | **Fixed** (Phase 4) | `drainInbox` used read-then-delete; two concurrent polls could return the same non-`request` signal twice (or lose ordering guarantees under load). | `drainInbox` now atomically claims deliverable rows with `DELETE … RETURNING` in `lib/db/signal.ts`. Pending `request` rows are still re-read each poll (by design) so accept/decline authorization can verify them; client ignores duplicate incoming requests (`useLiveSession.ts`, Phase 3). Lifecycle signals are still inserted before pending-request cleanup in `deliverSignal()`. |
+| PeerSession negotiation | WebRTC complexity — offer collision, ICE ordering, polite peer | **Mitigated** (Phase 1) | Simultaneous offers, early ICE before remote SDP, and glare can prevent P2P setup. | `PeerSession` in `lib/webrtc.ts`: polite peer (`polite = !initiator`), `ignoreOffer` on impolite glare, ICE queued until `setRemoteDescription()` then flushed, `onnegotiationneeded` for offers. **Residual:** no TURN server (NAT-restricted networks may still fail); errors in `addIceCandidate` / JSON parse are swallowed — acceptable for anonymous ephemeral chat but worth monitoring in production. |

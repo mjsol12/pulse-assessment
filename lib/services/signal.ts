@@ -43,6 +43,7 @@ export async function deliverSignal(
   if (RECIPIENT_TYPES.includes(signalType)) {
     const pending = await signalDb.findPendingRequest(toId, fromId);
     if (!pending) {
+      if (signalType === "decline") return { ok: true };
       return { ok: false, status: 409, error: "no pending request" };
     }
   }

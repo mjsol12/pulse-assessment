@@ -15,7 +15,7 @@ import { type PeerDot, type SignalMsg } from "@/lib/types";
 import { PeerSession, type DescType, type PeerControl } from "@/lib/webrtc";
 import type { Conn, Location, VideoState } from "./types";
 
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export function useLiveSession(sessionId: string, myLocation: Location) {
   const [peers, setPeers] = useState<PeerDot[]>([]);
@@ -41,6 +41,8 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
   const peerRef = useRef<PeerSession | null>(null);
   const msgId = useRef(0);
   const requestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const incomingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignoredRequestPeer = useRef<string | null>(null);
   const alertPrefsRef = useRef<AlertPrefs>(DEFAULT_ALERT_PREFS);
 
   const handleAlertPrefsChange = useCallback((prefs: AlertPrefs) => {
@@ -63,8 +65,42 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
     setMessages((prev) => [...prev, { id: msgId.current++, mine, text }]);
   }
 
+  function clearRequestTimer() {
+    if (!requestTimer.current) return;
+    clearTimeout(requestTimer.current);
+    requestTimer.current = null;
+  }
+
+  function clearIncomingTimer() {
+    if (!incomingTimer.current) return;
+    clearTimeout(incomingTimer.current);
+    incomingTimer.current = null;
+  }
+
+  function showIncomingRequest(peerId: string) {
+    clearIncomingTimer();
+    setConn({ kind: "incoming", peerId });
+    incomingTimer.current = setTimeout(() => {
+      if (
+        connRef.current.kind === "incoming" &&
+        connRef.current.peerId === peerId
+      ) {
+        declineRequest(peerId);
+        setConn({ kind: "idle" });
+      }
+    }, REQUEST_TIMEOUT_MS);
+  }
+
+  function declineRequest(peerId: string) {
+    ignoredRequestPeer.current = peerId;
+    void sendSignal(sessionId, peerId, "decline").finally(() => {
+      if (ignoredRequestPeer.current === peerId) ignoredRequestPeer.current = null;
+    });
+  }
+
   function teardown(message?: string) {
-    if (requestTimer.current) clearTimeout(requestTimer.current);
+    clearRequestTimer();
+    clearIncomingTimer();
     peerRef.current?.close();
     peerRef.current = null;
     setLocalStream(null);
@@ -158,14 +194,20 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
   function acceptIncoming() {
     if (connRef.current.kind !== "incoming") return;
     const peerId = connRef.current.peerId;
+    clearIncomingTimer();
+    ignoredRequestPeer.current = peerId;
     startPeer(peerId, false);
-    void sendSignal(sessionId, peerId, "accept");
+    void sendSignal(sessionId, peerId, "accept").finally(() => {
+      if (ignoredRequestPeer.current === peerId) ignoredRequestPeer.current = null;
+    });
     setConn({ kind: "connecting", peerId });
   }
 
   function declineIncoming() {
     if (connRef.current.kind !== "incoming") return;
-    void sendSignal(sessionId, connRef.current.peerId, "decline");
+    const peerId = connRef.current.peerId;
+    clearIncomingTimer();
+    declineRequest(peerId);
     setConn({ kind: "idle" });
   }
 
@@ -216,9 +258,12 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
   function processSignal(sig: SignalMsg) {
     switch (sig.type) {
       case "request": {
-        if (connRef.current.kind === "idle") {
-          setConn({ kind: "incoming", peerId: sig.fromId });
-        } else {
+        const c = connRef.current;
+        const currentPeerId = c.kind === "idle" ? null : c.peerId;
+        if (ignoredRequestPeer.current === sig.fromId) break;
+        if (c.kind === "idle") {
+          showIncomingRequest(sig.fromId);
+        } else if (currentPeerId !== sig.fromId) {
           void sendSignal(sessionId, sig.fromId, "decline");
         }
         break;
@@ -226,7 +271,7 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
       case "accept": {
         const c = connRef.current;
         if (c.kind === "requesting" && c.peerId === sig.fromId) {
-          if (requestTimer.current) clearTimeout(requestTimer.current);
+          clearRequestTimer();
           startPeer(sig.fromId, true);
           setConn({ kind: "connecting", peerId: sig.fromId });
         }
@@ -235,7 +280,6 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
       case "decline": {
         const c = connRef.current;
         if (c.kind === "requesting" && c.peerId === sig.fromId) {
-          if (requestTimer.current) clearTimeout(requestTimer.current);
           teardown("Request declined.");
         }
         break;
@@ -262,8 +306,10 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
             c.kind === "connected") &&
           c.peerId === sig.fromId
         ) {
-          if (c.kind === "incoming") setConn({ kind: "idle" });
-          else teardown("Stranger disconnected.");
+          if (c.kind === "incoming") {
+            clearIncomingTimer();
+            setConn({ kind: "idle" });
+          } else teardown("Stranger disconnected.");
         }
         break;
       }
@@ -293,6 +339,9 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
+      clearRequestTimer();
+      clearIncomingTimer();
+      ignoredRequestPeer.current = null;
     };
   }, [sessionId]);
 
