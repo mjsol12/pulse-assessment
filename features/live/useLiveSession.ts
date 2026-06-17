@@ -6,6 +6,7 @@ import { leave, poll, sendSignal } from "@/lib/api";
 import {
   DEFAULT_ALERT_PREFS,
   playMessageTone,
+  primeAlertAudio,
   startIncomingAlert,
   stopIncomingAlert,
   type AlertPrefs,
@@ -171,6 +172,7 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
 
   function requestConnection(peerId: string) {
     if (connRef.current.kind !== "idle") return;
+    void primeAlertAudio();
     setConn({ kind: "requesting", peerId });
     void sendSignal(sessionId, peerId, "request");
     requestTimer.current = setTimeout(() => {
@@ -193,6 +195,7 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
 
   function acceptIncoming() {
     if (connRef.current.kind !== "incoming") return;
+    void primeAlertAudio();
     const peerId = connRef.current.peerId;
     clearIncomingTimer();
     ignoredRequestPeer.current = peerId;
@@ -376,6 +379,7 @@ export function useLiveSession(sessionId: string, myLocation: Location) {
   }, [conn.kind, video]);
 
   function sendChat(text: string) {
+    void primeAlertAudio();
     peerRef.current?.sendChat(text);
     addMessage(true, text);
   }

@@ -28,6 +28,7 @@ const ALERT_COPY: Record<IncomingAlertKind, { title: string; body: string }> = {
 let repeatTimer: ReturnType<typeof setInterval> | null = null;
 let activeNotification: Notification | null = null;
 let audioCtx: AudioContext | null = null;
+let audioPrimed = false;
 let visibilityHandler: (() => void) | null = null;
 
 export function loadAlertPrefs(): AlertPrefs {
@@ -79,15 +80,37 @@ function getAudioContext(): AudioContext | null {
         .webkitAudioContext;
     if (!Ctx) return null;
     if (!audioCtx) audioCtx = new Ctx();
-    if (audioCtx.state === "suspended") void audioCtx.resume();
     return audioCtx;
   } catch {
     return null;
   }
 }
 
+export async function primeAlertAudio(): Promise<void> {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch {
+      return;
+    }
+  }
+  if (ctx.state !== "running" || audioPrimed) return;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.value = 0.0001;
+  osc.frequency.value = 440;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.03);
+  audioPrimed = true;
+}
+
 export function playIncomingChime(): void {
-  playToneSequence(
+  void playToneSequence(
     [
       { freq: 880, start: 0, duration: 0.4 },
       { freq: 1174.66, start: 0.16, duration: 0.4 },
@@ -97,15 +120,24 @@ export function playIncomingChime(): void {
 }
 
 export function playMessageTone(): void {
-  playToneSequence([{ freq: 784, start: 0, duration: 0.2 }], 0.09);
+  void playToneSequence([{ freq: 784, start: 0, duration: 0.2 }], 0.09);
 }
 
-function playToneSequence(
+async function playToneSequence(
   tones: { freq: number; start: number; duration: number }[],
   peakGain: number,
-): void {
+): Promise<void> {
   const ctx = getAudioContext();
   if (!ctx) return;
+  await primeAlertAudio();
+  if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch {
+      return;
+    }
+  }
+  if (ctx.state !== "running") return;
 
   const now = ctx.currentTime;
   for (const { freq, start, duration } of tones) {
