@@ -5,7 +5,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import type { PeerDot } from "@/lib/types";
 
-const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "pk.eyJ1IjoicHVsc2UtbWFwIiwiYSI6ImNrMDBkZW1vMDAwMDAwMDAifQ.AAAAAAAAAAAAAAAAAAAAAA";
+const TOKEN =
+  process.env.NEXT_PUBLIC_MAPBOX_TOKEN ??
+  "pk.eyJ1IjoicHVsc2UtbWFwIiwiYSI6ImNrMDBkZW1vMDAwMDAwMDAifQ.AAAAAAAAAAAAAAAAAAAAAA";
 
 function dotColor(id: string): string {
   let hash = 0;
@@ -125,8 +127,9 @@ export default function WorldMap({
         if (!marker) {
           const el = document.createElement("button");
           el.className = "pulse-dot";
-          el.style.background = dotColor(peer.id);
+          el.style.setProperty("--pulse-color", dotColor(peer.id));
           el.title = "Tap to connect";
+          el.type = "button";
           el.addEventListener("click", (e) => {
             e.stopPropagation();
             if (canConnectRef.current) onPeerClickRef.current(peer.id);
@@ -136,7 +139,22 @@ export default function WorldMap({
             .addTo(map);
           markers.set(peer.id, marker);
         }
-        marker.getElement().style.opacity = peer.busy ? "0.35" : "1";
+        const element = marker.getElement() as HTMLButtonElement;
+        element.disabled = peer.busy || !canConnect;
+        element.title = peer.busy
+          ? "This stranger is already connected"
+          : canConnect
+            ? "Tap to connect"
+            : "Finish your current connection first";
+        element.setAttribute(
+          "aria-label",
+          peer.busy
+            ? "Stranger is busy"
+            : canConnect
+              ? "Request connection with stranger"
+              : "Connection unavailable while you are busy",
+        );
+        element.style.opacity = peer.busy ? "0.45" : "1";
       }
 
       // Drop markers for peers that went offline / got filtered out.
@@ -151,15 +169,23 @@ export default function WorldMap({
     return () => {
       cancelled = true;
     };
-  }, [peers, ready]);
+  }, [peers, ready, canConnect]);
 
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full bg-zinc-900" />
 
+      {!ready && TOKEN && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/40 p-6 text-center">
+          <div className="rounded-2xl border border-white/10 bg-zinc-950/85 px-5 py-4 text-sm text-zinc-300 shadow-2xl backdrop-blur">
+            Loading live map...
+          </div>
+        </div>
+      )}
+
       {!TOKEN && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-          <p className="max-w-md rounded-lg bg-zinc-800 p-4 text-sm text-zinc-200">
+          <p className="max-w-md rounded-2xl border border-white/10 bg-zinc-950/90 p-4 text-sm leading-6 text-zinc-200 shadow-2xl">
             Set{" "}
             <code className="text-emerald-400">NEXT_PUBLIC_MAPBOX_TOKEN</code> in{" "}
             <code>.env</code> to load the map.
@@ -167,9 +193,19 @@ export default function WorldMap({
         </div>
       )}
 
-      {/* Online count */}
-      <div className="absolute bottom-4 left-4 rounded-full bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300 backdrop-blur">
-        {peers.length} online
+      <div className="absolute bottom-16 left-4 max-w-[calc(100%-2rem)] rounded-2xl border border-white/10 bg-zinc-950/75 px-4 py-3 text-sm text-zinc-200 shadow-xl backdrop-blur md:bottom-auto md:top-4 md:max-w-sm">
+        <p className="font-semibold text-white">Live strangers nearby</p>
+        <p className="mt-1 text-xs leading-5 text-zinc-400">
+          Tap an available dot to request a private peer-to-peer chat.
+        </p>
+      </div>
+
+      <div
+        role="status"
+        aria-live="polite"
+        className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-zinc-950/80 px-3 py-1.5 text-xs font-medium text-zinc-200 shadow-lg backdrop-blur"
+      >
+        {peers.length} {peers.length === 1 ? "stranger" : "strangers"} online
       </div>
     </div>
   );

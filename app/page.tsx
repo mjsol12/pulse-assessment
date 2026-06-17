@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import EntryGate from "./components/EntryGate";
-import WorldMap from "./components/WorldMap";
 import ConnectionPrompt from "./components/ConnectionPrompt";
-import ChatPanel, { type ChatMessage } from "./components/ChatPanel";
-import VideoPanel from "./components/VideoPanel";
+import WorldMap from "@/components/templates/world-map";
+import ChatPanel, { type ChatMessage } from "@/components/templates/chat-panel";
+import VideoPanel from "@/components/templates/video-panel";
 import { join, leave, poll, sendSignal } from "@/lib/api";
 import { PeerSession, type DescType, type PeerControl } from "@/lib/webrtc";
 import { POLL_INTERVAL_MS } from "@/lib/presence";
@@ -317,7 +317,10 @@ export default function Home() {
   const inChat = conn.kind === "connecting" || conn.kind === "connected";
 
   return (
-    <main className="fixed inset-0 overflow-hidden">
+    <main
+      aria-label="Pulse live map"
+      className="fixed inset-0 overflow-hidden bg-zinc-950"
+    >
       <WorldMap
         peers={peers}
         me={myLocation}
@@ -326,17 +329,25 @@ export default function Home() {
       />
 
       {notice && (
-        <div className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-full bg-zinc-800/90 px-4 py-2 text-sm text-zinc-100 shadow-lg backdrop-blur">
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute left-1/2 top-5 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 text-center text-sm leading-6 text-zinc-100 shadow-2xl backdrop-blur"
+        >
           {notice}
         </div>
       )}
 
       {conn.kind === "requesting" && (
-        <div className="absolute left-1/2 top-20 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-zinc-800/90 px-4 py-2 text-sm text-zinc-100 shadow-lg backdrop-blur">
-          <span>Requesting connection…</span>
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute left-1/2 top-24 z-30 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur"
+        >
+          <span className="font-medium">Requesting connection…</span>
           <button
             onClick={cancelRequest}
-            className="rounded-full bg-zinc-700 px-3 py-1 text-xs hover:bg-zinc-600"
+            className="min-h-10 rounded-full bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
           >
             Cancel
           </button>
@@ -368,7 +379,11 @@ export default function Home() {
       )}
 
       {video === "requesting" && (
-        <div className="absolute bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-full bg-zinc-800/90 px-4 py-2 text-sm text-zinc-100 shadow-lg backdrop-blur">
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute bottom-24 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 text-center text-sm leading-6 text-zinc-100 shadow-2xl backdrop-blur md:bottom-6"
+        >
           Waiting for stranger to accept video…
         </div>
       )}

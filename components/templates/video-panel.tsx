@@ -27,18 +27,24 @@ export default function VideoPanel({
   }, [remoteStream]);
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-black">
+    <div className="absolute inset-0 z-30 flex flex-col bg-black text-zinc-100">
       <div className="relative flex-1">
         {/* Remote (full screen) */}
         <video
           ref={remoteRef}
           autoPlay
           playsInline
+          aria-label="Remote video"
           className="h-full w-full bg-zinc-900 object-cover"
         />
         {!remoteStream && (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-            Waiting for stranger&rsquo;s video…
+          <div
+            role="status"
+            className="absolute inset-0 flex items-center justify-center p-6 text-center text-zinc-400"
+          >
+            <div className="rounded-2xl border border-white/10 bg-zinc-950/80 px-5 py-4 shadow-2xl backdrop-blur">
+              Waiting for stranger&rsquo;s video…
+            </div>
           </div>
         )}
         {/* Local (picture-in-picture) */}
@@ -47,13 +53,14 @@ export default function VideoPanel({
           autoPlay
           playsInline
           muted
-          className="absolute bottom-4 right-4 h-40 w-28 rounded-lg border border-zinc-700 bg-zinc-800 object-cover"
+          aria-label="Your video preview"
+          className="absolute bottom-4 right-4 h-32 w-24 rounded-2xl border border-white/15 bg-zinc-800 object-cover shadow-2xl sm:h-40 sm:w-28"
         />
       </div>
-      <div className="flex justify-center bg-zinc-950 p-4">
+      <div className="flex justify-center border-t border-white/10 bg-zinc-950/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <button
           onClick={onEnd}
-          className="rounded-full bg-red-500 px-8 py-3 font-semibold text-white hover:bg-red-400"
+          className="min-h-12 rounded-full bg-red-500 px-8 py-3 font-semibold text-white transition hover:bg-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         >
           End video
         </button>
