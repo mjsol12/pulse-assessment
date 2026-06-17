@@ -46,14 +46,14 @@
 
 Prioritized review of the coordination API (no accounts — session UUID is the only identity).
 
-| Issue | Severity | Endpoints | Impact |
-|-------|----------|-----------|--------|
-| No session ownership (IDOR) | Critical | all four routes | Impersonate any user, drain mailboxes, force disconnects, spoof WebRTC signals |
-| Global poll heartbeat | High | `GET /api/poll` | Keeps all ghost sessions alive; breaks privacy + availability |
-| Unauthenticated signal relay | High | `POST /api/signal` | Harassment, signaling injection, busy-state manipulation |
-| No rate limiting | Medium | all routes | Signal/mailbox spam, DB write pressure |
-| Busy-state manipulation | Medium | `POST /api/signal` | Fake `accept` could mark victims busy without a real connection |
-| Client-supplied geolocation | Low | `POST /api/join` | Dot can be placed anywhere (expected tradeoff for anonymous app) |
+| Issue                        | Severity | Endpoints          | Impact                                                                         |
+| ---------------------------- | -------- | ------------------ | ------------------------------------------------------------------------------ |
+| No session ownership (IDOR)  | Critical | all four routes    | Impersonate any user, drain mailboxes, force disconnects, spoof WebRTC signals |
+| Global poll heartbeat        | High     | `GET /api/poll`    | Keeps all ghost sessions alive; breaks privacy + availability                  |
+| Unauthenticated signal relay | High     | `POST /api/signal` | Harassment, signaling injection, busy-state manipulation                       |
+| No rate limiting             | Medium   | all routes         | Signal/mailbox spam, DB write pressure                                         |
+| Busy-state manipulation      | Medium   | `POST /api/signal` | Fake `accept` could mark victims busy without a real connection                |
+| Client-supplied geolocation  | Low      | `POST /api/join`   | Dot can be placed anywhere (expected tradeoff for anonymous app)               |
 
 **Existing controls that held (no change needed):**
 
@@ -106,18 +106,18 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 
 ### Files touched
 
-| File | Change |
-|------|--------|
-| `lib/session.ts` | New — per-tab token auth, cookie fallback, session validation, client IP |
-| `lib/rate-limit.ts` | New — in-memory rate limiter |
-| `app/api/join/route.ts` | Issue per-tab session token; set fallback cookie; rate limit |
-| `app/api/poll/route.ts` | Authenticated poll; scoped heartbeat; retain `request` signals on drain |
+| File                      | Change                                                                     |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `lib/session.ts`          | New — per-tab token auth, cookie fallback, session validation, client IP   |
+| `lib/rate-limit.ts`       | New — in-memory rate limiter                                               |
+| `app/api/join/route.ts`   | Issue per-tab session token; set fallback cookie; rate limit               |
+| `app/api/poll/route.ts`   | Authenticated poll; scoped heartbeat; retain `request` signals on drain    |
 | `app/api/signal/route.ts` | Authenticated signal relay; authorization rules; busy on `end`; rate limit |
-| `app/api/leave/route.ts` | Authenticated leave; id must match session; rate limit |
-| `lib/api.ts` | Per-tab token storage; auth headers; poll without id param |
-| `app/page.tsx` | Updated `poll()` call |
-| `lib/webrtc.ts` | Chat envelope fix; apply remote SDP before queued ICE candidates |
-| `prisma/schema.prisma` | Added `Presence.authTokenHash` for per-tab session auth |
+| `app/api/leave/route.ts`  | Authenticated leave; id must match session; rate limit                     |
+| `lib/api.ts`              | Per-tab token storage; auth headers; poll without id param                 |
+| `app/page.tsx`            | Updated `poll()` call                                                      |
+| `lib/webrtc.ts`           | Chat envelope fix; apply remote SDP before queued ICE candidates           |
+| `prisma/schema.prisma`    | Added `Presence.authTokenHash` for per-tab session auth                    |
 
 ---
 
@@ -150,9 +150,9 @@ When a connection starts or ends, the chat panel no longer mounts/unmounts insta
 
 State is exposed on the root `<section>` as `data-state="open" | "closed"` and `aria-hidden` when closed. Styles live in `app/globals.css` under `.chat-panel`:
 
-| Viewport | Closed | Open |
-|----------|--------|------|
-| Mobile (`< md`) | `translateY(100%)` + fade — slides down off-screen | `translateY(0)` + full opacity |
+| Viewport         | Closed                                               | Open                           |
+| ---------------- | ---------------------------------------------------- | ------------------------------ |
+| Mobile (`< md`)  | `translateY(100%)` + fade — slides down off-screen   | `translateY(0)` + full opacity |
 | Desktop (`≥ md`) | `translateX(100%)` + fade — slides in from the right | `translateX(0)` + full opacity |
 
 Timing: 320ms transform (`cubic-bezier(0.32, 0.72, 0, 1)`), 240ms opacity. Closed panels use `pointer-events: none` so they do not block map taps during the exit animation.
@@ -189,12 +189,12 @@ Before deepening the security review, the four coordination routes were refactor
 
 #### Layering
 
-| Layer | Role | Modules |
-|-------|------|---------|
-| Route handlers | Auth, rate limits, JSON I/O | `app/api/{join,leave,poll,signal}/route.ts` |
-| Services | Orchestration and policy | `lib/services/poll.ts`, `lib/services/signal.ts` |
-| Data access | Prisma only, no HTTP | `lib/db/presence.ts`, `lib/db/signal.ts` |
-| Utils | Parsing and shared constants | `lib/utils/signal.ts` |
+| Layer          | Role                         | Modules                                          |
+| -------------- | ---------------------------- | ------------------------------------------------ |
+| Route handlers | Auth, rate limits, JSON I/O  | `app/api/{join,leave,poll,signal}/route.ts`      |
+| Services       | Orchestration and policy     | `lib/services/poll.ts`, `lib/services/signal.ts` |
+| Data access    | Prisma only, no HTTP         | `lib/db/presence.ts`, `lib/db/signal.ts`         |
+| Utils          | Parsing and shared constants | `lib/utils/signal.ts`                            |
 
 Routes now delegate after `requireSession` / rate limiting; services own heartbeat + reap, mailbox drain, busy transitions, and signal authorization checks.
 
@@ -222,20 +222,22 @@ Routes now delegate after `requireSession` / rate limiting; services own heartbe
 
 #### Files touched
 
-| File | Change |
-|------|--------|
-| `lib/db/presence.ts` | New — presence CRUD and queries |
-| `lib/db/signal.ts` | New — signal mailbox and lifecycle queries |
-| `lib/services/poll.ts` | New — poll orchestration |
-| `lib/services/signal.ts` | New — signal delivery and authorization |
-| `lib/utils/signal.ts` | New — body parsing and signal constants |
-| `lib/session.ts` | Auth lookup via presence db module |
-| `app/api/join/route.ts` | Thin handler → `presenceDb.upsertOnJoin` |
-| `app/api/leave/route.ts` | Thin handler → db cleanup helpers |
-| `app/api/poll/route.ts` | Thin handler → `getPollResponse` |
+| File                      | Change                                             |
+| ------------------------- | -------------------------------------------------- |
+| `lib/db/presence.ts`      | New — presence CRUD and queries                    |
+| `lib/db/signal.ts`        | New — signal mailbox and lifecycle queries         |
+| `lib/services/poll.ts`    | New — poll orchestration                           |
+| `lib/services/signal.ts`  | New — signal delivery and authorization            |
+| `lib/utils/signal.ts`     | New — body parsing and signal constants            |
+| `lib/session.ts`          | Auth lookup via presence db module                 |
+| `app/api/join/route.ts`   | Thin handler → `presenceDb.upsertOnJoin`           |
+| `app/api/leave/route.ts`  | Thin handler → db cleanup helpers                  |
+| `app/api/poll/route.ts`   | Thin handler → `getPollResponse`                   |
 | `app/api/signal/route.ts` | Thin handler → `parseSignalBody` + `deliverSignal` |
 
 ### Client route code-splitting
+
+Full layout and diagrams: [docs/project-structure.md](docs/project-structure.md).
 
 - Slimmed `app/page.tsx` to gate orchestration only (`phase`, `sessionId`, `join`); live session loads via `next/dynamic` after entry.
 - New `features/live/` module: `useLiveSession` (polling, WebRTC, signals), `LiveSession` (live UI), `types.ts`.
