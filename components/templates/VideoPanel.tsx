@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { EndCallIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/Button";
+import { EndCallIcon } from "@/components/ui/Icons";
 
 export default function VideoPanel({
   localStream,

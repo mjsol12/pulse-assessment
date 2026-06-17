@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import { VideoIcon } from "@/components/ui/icons";
+import { VideoIcon } from "@/components/ui/Icons";
 
 // Reusable centered prompt for "someone wants to connect" and
 // "someone wants to start video".
@@ -27,9 +27,10 @@ export default function ConnectionPrompt({
   const acceptRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const previous = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     acceptRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {

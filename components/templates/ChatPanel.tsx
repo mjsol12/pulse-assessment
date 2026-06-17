@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { EndCallIcon, SendIcon, VideoIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/Button";
+import { EndCallIcon, SendIcon, VideoIcon } from "@/components/ui/Icons";
 
 export interface ChatMessage {
   id: number;

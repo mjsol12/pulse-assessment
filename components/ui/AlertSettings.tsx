@@ -57,7 +57,7 @@ function Toggle({
   );
 }
 
-export default function AlertSettings({
+export function AlertSettings({
   onPrefsChange,
   onNotice,
 }: {

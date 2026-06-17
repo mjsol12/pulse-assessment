@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import EntryGate from "./components/EntryGate";
 import ConnectionPrompt from "./components/ConnectionPrompt";
-import AlertSettings from "./components/AlertSettings";
-import WorldMap from "@/components/templates/world-map";
-import ChatPanel, { type ChatMessage } from "@/components/templates/chat-panel";
-import VideoPanel from "@/components/templates/video-panel";
+import { AlertSettings } from "@/components/ui/AlertSettings";
+import WorldMap from "@/components/templates/WordMap";
+import ChatPanel, { type ChatMessage } from "@/components/templates/ChatPanel";
+import VideoPanel from "@/components/templates/VideoPanel";
 import { join, leave, poll, sendSignal } from "@/lib/api";
 import {
   DEFAULT_ALERT_PREFS,
