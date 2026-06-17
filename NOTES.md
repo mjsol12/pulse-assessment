@@ -234,3 +234,13 @@ Routes now delegate after `requireSession` / rate limiting; services own heartbe
 | `app/api/leave/route.ts` | Thin handler → db cleanup helpers |
 | `app/api/poll/route.ts` | Thin handler → `getPollResponse` |
 | `app/api/signal/route.ts` | Thin handler → `parseSignalBody` + `deliverSignal` |
+
+---
+
+## Phase 4
+
+### Connection alerts (new feature)
+
+Optional alert tones for incoming connection/video requests and each received chat message, plus desktop notifications when the tab is in the background. Toggles live in the **Alerts** panel (top-right on desktop); preferences persist in `localStorage`. Incoming requests also get an animated prompt, caller dot highlight on the map, and repeating chime until accept/decline.
+
+**Files:** `lib/alerts.ts`, `app/components/AlertSettings.tsx`, `app/components/ConnectionPrompt.tsx`, `app/page.tsx`, `app/globals.css`, `components/templates/world-map.tsx`.
