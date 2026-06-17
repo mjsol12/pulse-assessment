@@ -3,8 +3,6 @@
 import { useEffect, useId, useRef } from "react";
 import { VideoIcon } from "@/components/ui/Icons";
 
-// Reusable centered prompt for "someone wants to connect" and
-// "someone wants to start video".
 export default function ConnectionPrompt({
   variant = "connect",
   title,
