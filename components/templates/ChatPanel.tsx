@@ -79,7 +79,7 @@ export default function ChatPanel({
       aria-hidden={!visible}
       data-state={visible ? "open" : "closed"}
       onTransitionEnd={handleTransitionEnd}
-      className="chat-panel absolute inset-x-3 bottom-3 z-20 flex max-h-[82dvh] z-[999] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/45 backdrop-blur-xl md:inset-x-auto md:inset-y-4 md:right-4 md:max-h-none md:w-[26rem]"
+      className="chat-panel absolute inset-x-3 bottom-3 z-20 flex max-h-[82dvh] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/45 backdrop-blur-xl md:inset-x-auto md:inset-y-4 md:right-4 md:max-h-none md:w-[26rem]"
     >
       <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div>
