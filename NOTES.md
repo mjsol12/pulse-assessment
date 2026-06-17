@@ -125,3 +125,30 @@ Prioritized review of the coordination API (no accounts — session UUID is the 
 
 - npm audit moderate transitive deps (deferred — breaking upgrade path).
 - Rate limiter is per-instance only on Vercel serverless; a shared store (Redis/KV) would be needed for fleet-wide enforcement.
+
+---
+
+## Phase 2
+
+### UI/UX changes
+
+- Refreshed dark UI: Geist typography, elevated surfaces, emerald accent, clearer spacing and hierarchy.
+- Entry gate: card-based onboarding with clearer privacy copy and accessible error states.
+- Live map: loading overlay, onboarding hint, online count, larger peer touch targets, busy/disabled labels.
+- Chat: mobile bottom sheet + desktop side panel; labeled input; shared `Button` component.
+- Connection/video prompts: accessible dialog semantics, focus management, Escape to decline.
+- Status banners and video overlay: `aria-live` regions, focus-visible rings, reduced-motion support.
+- Component layout: shared UI in `components/ui/`, feature templates in `components/templates/`.
+
+### Design rationale
+
+- Keep the map as the primary surface; overlays should feel temporary and non-blocking on mobile.
+- Prioritize trust and clarity for anonymous use: privacy copy, connection states, and non-color busy cues.
+- Accessibility improvements (dialogs, labels, touch targets, live regions) were treated as part of polish, not a separate pass.
+
+### Trade-offs
+
+- No new UI library — Tailwind-only to avoid dependency bloat; less animation/theming flexibility than a full design system.
+- Map-first interaction remains hard for keyboard users; no separate peer list yet.
+- Dialog focus trapping is lightweight (no dedicated focus-trap library).
+- `EntryGate` and `ConnectionPrompt` still live under `app/components/`; only larger templates were moved to `components/templates/`.
