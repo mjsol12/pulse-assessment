@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 type MeshNode = {
   id: string;
@@ -71,10 +72,10 @@ function NeuralMesh() {
       className="relative mx-auto mb-6 flex h-20 w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl px-4"
       aria-hidden="true"
     >
-      <div className="pulse-neural-orbit absolute inset-4 rounded-full bg-emerald-400/10 blur-2xl" />
+      <div className="pulse-neural-orbit absolute inset-4 rounded-full bg-emerald-400/10 blur-2xl light:bg-emerald-300/30" />
       <svg
         viewBox="30 70 260 60"
-        className="relative h-14 w-full text-emerald-200/90"
+        className="relative h-14 w-full text-emerald-200/90 light:text-emerald-600"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -233,13 +234,14 @@ export default function EntryGate({
   }
 
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#12372f_0%,#050711_42%,#02030a_100%)] p-4 text-zinc-100 sm:p-6">
-      <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-zinc-950/75 p-6 text-center shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+    <div className="relative flex min-h-full flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#12372f_0%,#050711_42%,#02030a_100%)] p-4 text-zinc-100 light:bg-[radial-gradient(circle_at_top,#d1fae5_0%,#f8fafc_44%,#e2e8f0_100%)] light:text-slate-950 sm:p-6">
+      <ThemeToggle className="absolute right-4 top-4 z-10" />
+      <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-zinc-950/75 p-6 text-center shadow-2xl shadow-black/40 backdrop-blur-xl light:border-slate-200 light:bg-white/80 light:shadow-slate-200/80 sm:p-8">
         <NeuralMesh />
-        <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
+        <h1 className="text-5xl font-bold tracking-tight text-white light:text-slate-950 sm:text-6xl">
           Pulse
         </h1>
-        <p className="mx-auto mt-4 max-w-md text-base leading-7 text-zinc-300">
+        <p className="mx-auto mt-4 max-w-md text-base leading-7 text-zinc-300 light:text-slate-600">
           A living globe of anonymous strangers. Share your approximate
           location, tap a dot, and start a private peer-to-peer conversation.
         </p>
@@ -250,7 +252,7 @@ export default function EntryGate({
           aria-describedby={
             status === "error" ? "location-error" : "privacy-note"
           }
-          className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-300 px-8 py-3 font-semibold text-zinc-950 shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:bg-zinc-600 disabled:text-zinc-300"
+          className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-300 px-8 py-3 font-semibold text-zinc-950 shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:bg-zinc-600 disabled:text-zinc-300 light:bg-emerald-500 light:text-white light:shadow-emerald-100 light:hover:bg-emerald-600 light:focus-visible:ring-emerald-500 light:focus-visible:ring-offset-white light:disabled:bg-slate-200 light:disabled:text-slate-400"
         >
           {status === "locating" ? "Locating..." : "Enter Pulse"}
         </button>
@@ -259,7 +261,7 @@ export default function EntryGate({
           <p
             id="location-error"
             role="alert"
-            className="mx-auto mt-5 max-w-sm rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-200"
+            className="mx-auto mt-5 max-w-sm rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-200 light:text-red-700"
           >
             {error}
           </p>
@@ -267,7 +269,7 @@ export default function EntryGate({
 
         <p
           id="privacy-note"
-          className="mx-auto mt-6 max-w-md text-sm leading-6 text-zinc-400"
+          className="mx-auto mt-6 max-w-md text-sm leading-6 text-zinc-400 light:text-slate-500"
         >
           No sign-up. Your dot is placed 1-3 km from your real location. Nothing
           is stored; closing the tab ends everything.

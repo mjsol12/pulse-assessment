@@ -29,7 +29,7 @@ export default function VideoPanel({
   }, [remoteStream]);
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-black text-zinc-100">
+    <div className="absolute inset-0 z-30 flex flex-col bg-black text-zinc-100 light:bg-slate-950">
       <div className="relative flex-1">
         {/* Remote (full screen) */}
         <video
@@ -42,9 +42,9 @@ export default function VideoPanel({
         {!remoteStream && (
           <div
             role="status"
-            className="absolute inset-0 flex items-center justify-center p-6 text-center text-zinc-400"
+            className="absolute inset-0 flex items-center justify-center p-6 text-center text-zinc-400 light:text-slate-300"
           >
-            <div className="rounded-2xl border border-white/10 bg-zinc-950/80 px-5 py-4 shadow-2xl backdrop-blur">
+            <div className="rounded-2xl border border-white/10 bg-zinc-950/80 px-5 py-4 shadow-2xl backdrop-blur light:border-slate-700 light:bg-slate-900/80">
               Waiting for stranger&rsquo;s video…
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function VideoPanel({
           className="absolute bottom-4 right-4 h-32 w-24 rounded-2xl border border-white/15 bg-zinc-800 object-cover shadow-2xl sm:h-40 sm:w-28"
         />
       </div>
-      <div className="flex justify-center border-t border-white/10 bg-zinc-950/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="flex justify-center border-t border-white/10 bg-zinc-950/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] light:border-slate-800 light:bg-slate-950/95">
         <Button
           variant="danger"
           size="lg"

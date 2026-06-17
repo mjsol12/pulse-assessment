@@ -3,9 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
+import type { Theme } from "@/components/ui/theme";
 import type { PeerDot } from "@/lib/types";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAP_STYLES: Record<Theme, string> = {
+  dark: "mapbox://styles/mapbox/dark-v11",
+  light: "mapbox://styles/mapbox/light-v11",
+};
 
 function dotColor(id: string): string {
   let hash = 0;
@@ -44,12 +49,14 @@ function LoadingDots() {
 }
 
 export default function WorldMap({
+  theme,
   peers,
   me,
   onPeerClick,
   canConnect,
   highlightPeerId = null,
 }: {
+  theme: Theme;
   peers: PeerDot[];
   me: { lat: number; lng: number } | null;
   onPeerClick: (id: string) => void;
@@ -83,7 +90,7 @@ export default function WorldMap({
       mapboxgl.accessToken = TOKEN;
       const map = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
+        style: MAP_STYLES[theme],
         // Open centered on the user if we know where they are, else world view.
         center: me ? [me.lng, me.lat] : [0, 20],
         zoom: me ? 4 : 1.4,
@@ -105,9 +112,15 @@ export default function WorldMap({
       mapRef.current = null;
       setReady(false);
     };
-    // `me` is only read for the initial center; we don't want to re-init on change.
+    // `theme` and `me` are only read for initial setup; style changes are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setStyle(MAP_STYLES[theme]);
+  }, [theme]);
 
   // Show / move the user's own "you are here" pin.
   useEffect(() => {
@@ -208,13 +221,16 @@ export default function WorldMap({
 
   return (
     <div className="absolute inset-0">
-      <div ref={containerRef} className="h-full w-full bg-zinc-900" />
+      <div
+        ref={containerRef}
+        className="h-full w-full bg-zinc-900 light:bg-slate-200"
+      />
 
       {!ready && TOKEN && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/40 p-6 text-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/40 p-6 text-center light:bg-white/50">
           <div
             role="status"
-            className="rounded-2xl border border-white/10 bg-zinc-950/85 px-5 py-4 text-sm text-zinc-300 shadow-2xl backdrop-blur"
+            className="rounded-2xl border border-white/10 bg-zinc-950/85 px-5 py-4 text-sm text-zinc-300 shadow-2xl backdrop-blur light:border-slate-200 light:bg-white/90 light:text-slate-600 light:shadow-slate-200/80"
           >
             Loading live map
             <LoadingDots />
@@ -224,17 +240,21 @@ export default function WorldMap({
 
       {!TOKEN && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-          <p className="max-w-md rounded-2xl border border-white/10 bg-zinc-950/90 p-4 text-sm leading-6 text-zinc-200 shadow-2xl">
+          <p className="max-w-md rounded-2xl border border-white/10 bg-zinc-950/90 p-4 text-sm leading-6 text-zinc-200 shadow-2xl light:border-slate-200 light:bg-white/95 light:text-slate-700 light:shadow-slate-200/80">
             Set{" "}
-            <code className="text-emerald-400">NEXT_PUBLIC_MAPBOX_TOKEN</code>{" "}
+            <code className="text-emerald-400 light:text-emerald-600">
+              NEXT_PUBLIC_MAPBOX_TOKEN
+            </code>{" "}
             in <code>.env</code> to load the map.
           </p>
         </div>
       )}
 
-      <div className="absolute bottom-16 left-4 max-w-[calc(100%-2rem)] rounded-2xl border border-white/10 bg-zinc-950/75 px-4 py-3 text-sm text-zinc-200 shadow-xl backdrop-blur md:bottom-auto md:top-4 md:max-w-sm">
-        <p className="font-semibold text-white">Live strangers nearby</p>
-        <p className="mt-1 text-xs leading-5 text-zinc-400">
+      <div className="absolute bottom-16 left-4 max-w-[calc(100%-2rem)] rounded-2xl border border-white/10 bg-zinc-950/75 px-4 py-3 text-sm text-zinc-200 shadow-xl backdrop-blur light:border-slate-200 light:bg-white/80 light:text-slate-700 light:shadow-slate-200/80 md:bottom-auto md:top-4 md:max-w-sm">
+        <p className="font-semibold text-white light:text-slate-950">
+          Live strangers nearby
+        </p>
+        <p className="mt-1 text-xs leading-5 text-zinc-400 light:text-slate-500">
           Tap an available dot to request a private peer-to-peer chat.
         </p>
       </div>
@@ -242,7 +262,7 @@ export default function WorldMap({
       <div
         role="status"
         aria-live="polite"
-        className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-zinc-950/80 px-3 py-1.5 text-xs font-medium text-zinc-200 shadow-lg backdrop-blur"
+        className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-zinc-950/80 px-3 py-1.5 text-xs font-medium text-zinc-200 shadow-lg backdrop-blur light:border-slate-200 light:bg-white/85 light:text-slate-700 light:shadow-slate-200/70"
       >
         {peers.length} {peers.length === 1 ? "stranger" : "strangers"} online
       </div>

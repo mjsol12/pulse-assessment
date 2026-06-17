@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { AlertSettings } from "@/components/ui/AlertSettings";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/components/ui/theme";
 import ChatPanel from "@/components/templates/ChatPanel";
 import ConnectionPrompt from "./components/ConnectionPrompt";
 import RequestingBanner from "./components/RequestingBanner";
@@ -12,8 +14,8 @@ import { useLiveSession } from "./useLiveSession";
 const WorldMap = dynamic(() => import("@/components/templates/WordMap"), {
   ssr: false,
   loading: () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-zinc-950">
-      <p className="text-sm text-zinc-400">Loading map…</p>
+    <div className="absolute inset-0 flex items-center justify-center bg-zinc-950 light:bg-slate-100">
+      <p className="text-sm text-zinc-400 light:text-slate-500">Loading map…</p>
     </div>
   ),
 });
@@ -50,15 +52,17 @@ export default function LiveSession({
     endVideo,
     sendChat,
   } = useLiveSession(sessionId, myLocation);
+  const { theme } = useTheme();
 
   const inChat = conn.kind === "connecting" || conn.kind === "connected";
 
   return (
     <main
       aria-label="Pulse live map"
-      className="fixed inset-0 overflow-hidden bg-zinc-950"
+      className="fixed inset-0 overflow-hidden bg-zinc-950 light:bg-slate-100"
     >
       <WorldMap
+        theme={theme}
         peers={peers}
         me={myLocation}
         onPeerClick={requestConnection}
@@ -70,12 +74,13 @@ export default function LiveSession({
         onPrefsChange={handleAlertPrefsChange}
         onNotice={showNotice}
       />
+      <ThemeToggle className="absolute right-28 top-4 z-10" />
 
       {notice && (
         <div
           role="status"
           aria-live="polite"
-          className="absolute left-1/2 top-5 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 text-center text-sm leading-6 text-zinc-100 shadow-2xl backdrop-blur"
+          className="bottom-popup-enter absolute bottom-24 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 text-center text-sm leading-6 text-zinc-100 shadow-2xl backdrop-blur light:border-slate-200 light:bg-white/95 light:text-slate-800 light:shadow-slate-200/80 md:bottom-6"
         >
           {notice}
         </div>

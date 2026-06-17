@@ -79,12 +79,12 @@ export default function ChatPanel({
       aria-hidden={!visible}
       data-state={visible ? "open" : "closed"}
       onTransitionEnd={handleTransitionEnd}
-      className="chat-panel absolute inset-x-3 bottom-3 z-20 flex max-h-[82dvh] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/45 backdrop-blur-xl md:inset-x-auto md:inset-y-4 md:right-4 md:max-h-none md:w-[26rem]"
+      className="chat-panel absolute inset-x-3 bottom-3 z-20 flex max-h-[82dvh] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/45 backdrop-blur-xl light:border-slate-200 light:bg-white/95 light:text-slate-950 light:shadow-slate-300/60 md:inset-x-auto md:inset-y-4 md:right-4 md:max-h-none md:w-[26rem]"
     >
-      <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+      <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 light:border-slate-200">
         <div>
           <h2 className="font-semibold tracking-tight">Stranger</h2>
-          <p className="mt-0.5 text-xs text-zinc-400">
+          <p className="mt-0.5 text-xs text-zinc-400 light:text-slate-500">
             {connected ? "Connected" : "Connecting…"}
           </p>
         </div>
@@ -118,7 +118,7 @@ export default function ChatPanel({
         className="flex-1 space-y-2 overflow-y-auto p-4"
       >
         {messages.length === 0 && (
-          <p className="mx-auto mt-8 max-w-xs rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm leading-6 text-zinc-400">
+          <p className="mx-auto mt-8 max-w-xs rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm leading-6 text-zinc-400 light:border-slate-200 light:bg-slate-50 light:text-slate-500">
             Say hello. Messages are peer-to-peer and never stored.
           </p>
         )}
@@ -130,8 +130,8 @@ export default function ChatPanel({
             <span
               className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${
                 m.mine
-                  ? "bg-emerald-300 text-zinc-950"
-                  : "border border-white/10 bg-zinc-900 text-zinc-100"
+                  ? "bg-emerald-300 text-zinc-950 light:bg-emerald-500 light:text-white"
+                  : "border border-white/10 bg-zinc-900 text-zinc-100 light:border-slate-200 light:bg-slate-100 light:text-slate-800"
               }`}
             >
               {m.text}
@@ -143,7 +143,7 @@ export default function ChatPanel({
 
       <form
         onSubmit={submit}
-        className="flex gap-2 border-t border-white/10 p-3"
+        className="flex gap-2 border-t border-white/10 p-3 light:border-slate-200"
       >
         <label htmlFor="chat-message" className="sr-only">
           Message
@@ -154,7 +154,7 @@ export default function ChatPanel({
           onChange={(e) => setDraft(e.target.value)}
           placeholder={connected ? "Type a message…" : "Connecting…"}
           disabled={!connected}
-          className="min-h-11 min-w-0 flex-1 rounded-full border border-white/10 bg-zinc-900 px-4 py-2 text-sm outline-none placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:text-zinc-500"
+          className="min-h-11 min-w-0 flex-1 rounded-full border border-white/10 bg-zinc-900 px-4 py-2 text-sm outline-none placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:text-zinc-500 light:border-slate-200 light:bg-slate-50 light:text-slate-900 light:placeholder:text-slate-400 light:focus:border-emerald-500 light:focus:ring-emerald-500/30 light:disabled:text-slate-400"
         />
         <Button
           type="submit"

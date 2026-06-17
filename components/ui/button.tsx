@@ -8,15 +8,15 @@ type ButtonVariant = "primary" | "secondary" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-not-allowed light:focus-visible:ring-offset-white";
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-emerald-300 font-semibold text-zinc-950 hover:bg-emerald-200 focus-visible:ring-emerald-200 disabled:bg-zinc-700 disabled:text-zinc-400",
+    "bg-emerald-300 font-semibold text-zinc-950 hover:bg-emerald-200 focus-visible:ring-emerald-200 disabled:bg-zinc-700 disabled:text-zinc-400 light:bg-emerald-500 light:text-white light:hover:bg-emerald-600 light:focus-visible:ring-emerald-500 light:disabled:bg-slate-200 light:disabled:text-slate-400",
   secondary:
-    "border border-zinc-700 font-medium text-zinc-200 hover:border-zinc-500 hover:bg-zinc-900 focus-visible:ring-emerald-200 disabled:border-zinc-800 disabled:text-zinc-600",
+    "border border-zinc-700 font-medium text-zinc-200 hover:border-zinc-500 hover:bg-zinc-900 focus-visible:ring-emerald-200 disabled:border-zinc-800 disabled:text-zinc-600 light:border-slate-300 light:text-slate-700 light:hover:border-slate-400 light:hover:bg-slate-100 light:focus-visible:ring-emerald-500 light:disabled:border-slate-200 light:disabled:text-slate-400",
   danger:
-    "bg-red-500 font-semibold text-white hover:bg-red-400 focus-visible:ring-red-200",
+    "bg-red-500 font-semibold text-white hover:bg-red-400 focus-visible:ring-red-200 light:bg-red-600 light:hover:bg-red-700 light:focus-visible:ring-red-500",
 };
 
 const sizes: Record<ButtonSize, string> = {

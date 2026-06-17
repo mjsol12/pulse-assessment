@@ -43,16 +43,16 @@ export default function ConnectionPrompt({
   }, [onDecline]);
 
   return (
-    <div className="connection-prompt-backdrop absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm sm:p-6">
+    <div className="connection-prompt-backdrop absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm light:bg-slate-900/35 sm:p-6">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={subtitle ? subtitleId : undefined}
-        className={`connection-prompt-dialog w-full max-w-sm rounded-[1.75rem] border bg-zinc-950/95 p-6 text-center text-zinc-100 shadow-2xl shadow-black/50 ${
+        className={`connection-prompt-dialog w-full max-w-sm rounded-[1.75rem] border bg-zinc-950/95 p-6 text-center text-zinc-100 shadow-2xl shadow-black/50 light:bg-white/95 light:text-slate-950 light:shadow-slate-300/70 ${
           variant === "connect"
-            ? "connection-prompt-dialog--connect border-emerald-300/20"
-            : "border-white/10"
+            ? "connection-prompt-dialog--connect border-emerald-300/20 light:border-emerald-200"
+            : "border-white/10 light:border-slate-200"
         }`}
       >
         {variant === "connect" ? (
@@ -66,12 +66,12 @@ export default function ConnectionPrompt({
             <span className="connection-prompt-indicator__core" />
           </div>
         ) : (
-          <div className="connection-prompt-video-icon mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-200 ring-1 ring-emerald-300/20">
+          <div className="connection-prompt-video-icon mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-200 ring-1 ring-emerald-300/20 light:bg-emerald-50 light:text-emerald-600 light:ring-emerald-200">
             <VideoIcon className="h-6 w-6" />
           </div>
         )}
         {variant === "connect" && (
-          <p className="connection-prompt-enter connection-prompt-enter--2 mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+          <p className="connection-prompt-enter connection-prompt-enter--2 mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90 light:text-emerald-600">
             Incoming request
           </p>
         )}
@@ -88,7 +88,7 @@ export default function ConnectionPrompt({
         {subtitle && (
           <p
             id={subtitleId}
-            className={`connection-prompt-enter mt-2 text-sm leading-6 text-zinc-400 ${
+            className={`connection-prompt-enter mt-2 text-sm leading-6 text-zinc-400 light:text-slate-500 ${
               variant === "connect"
                 ? "connection-prompt-enter--4"
                 : "connection-prompt-enter--3"
@@ -106,14 +106,14 @@ export default function ConnectionPrompt({
         >
           <button
             onClick={onDecline}
-            className="min-h-11 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            className="min-h-11 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 light:border-slate-300 light:text-slate-700 light:hover:border-slate-400 light:hover:bg-slate-100 light:focus-visible:ring-slate-400 light:focus-visible:ring-offset-white"
           >
             {declineLabel}
           </button>
           <button
             ref={acceptRef}
             onClick={onAccept}
-            className="connection-prompt-accept min-h-11 rounded-full bg-emerald-300 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            className="connection-prompt-accept min-h-11 rounded-full bg-emerald-300 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 light:bg-emerald-500 light:text-white light:hover:bg-emerald-600 light:focus-visible:ring-emerald-500 light:focus-visible:ring-offset-white"
           >
             {acceptLabel}
           </button>
