@@ -235,6 +235,15 @@ Routes now delegate after `requireSession` / rate limiting; services own heartbe
 | `app/api/poll/route.ts` | Thin handler → `getPollResponse` |
 | `app/api/signal/route.ts` | Thin handler → `parseSignalBody` + `deliverSignal` |
 
+### Client route code-splitting
+
+- Slimmed `app/page.tsx` to gate orchestration only (`phase`, `sessionId`, `join`); live session loads via `next/dynamic` after entry.
+- New `features/live/` module: `useLiveSession` (polling, WebRTC, signals), `LiveSession` (live UI), `types.ts`.
+- Nested dynamic imports defer heavy chunks: `WordMap` (mapbox-gl) on live mount, `VideoPanel` when video is active.
+- Live-only UI colocated under `features/live/components/` (`ConnectionPrompt`, `RequestingBanner`, `VideoWaitingBanner`).
+
+**Files:** `app/page.tsx`, `features/live/*`, `app/components/EntryGate.tsx` (gate stays in initial bundle).
+
 ---
 
 ## Phase 4
