@@ -14,30 +14,30 @@ export async function findBusyState(sessionId: string) {
   });
 }
 
-export async function upsertOnJoin(input: {
+export async function createOnJoin(input: {
   id: string;
   authTokenHash: string;
   lat: number;
   lng: number;
-}) {
+}): Promise<boolean> {
   const now = new Date();
-  await prisma.presence.upsert({
-    where: { id: input.id },
-    create: {
-      id: input.id,
-      authTokenHash: input.authTokenHash,
-      lat: input.lat,
-      lng: input.lng,
-      busy: false,
-      lastSeen: now,
-    },
-    update: {
-      authTokenHash: input.authTokenHash,
-      lat: input.lat,
-      lng: input.lng,
-      lastSeen: now,
-    },
-  });
+  try {
+    await prisma.presence.create({
+      data: {
+        id: input.id,
+        authTokenHash: input.authTokenHash,
+        lat: input.lat,
+        lng: input.lng,
+        busy: false,
+        lastSeen: now,
+      },
+    });
+    return true;
+  } catch (error) {
+    const existing = await findAuthTokenHash(input.id);
+    if (existing) return false;
+    throw error;
+  }
 }
 
 export async function heartbeat(sessionId: string, at: Date) {

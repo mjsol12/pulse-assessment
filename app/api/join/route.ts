@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import * as presenceDb from "@/lib/db/presence";
 import { applyPrivacyOffset, isValidLatLng } from "@/lib/geo";
 import {
@@ -7,8 +6,6 @@ import {
   hashSessionToken,
   isValidSessionId,
   newSessionToken,
-  SESSION_COOKIE,
-  sessionCookieOptions,
 } from "@/lib/session";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -16,9 +13,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // POST /api/join — body { id, lat, lng } (raw coords).
-// Applies a 1–3 km privacy offset and upserts the presence row. Raw
-// coordinates are never stored. Returns a per-tab session token; the cookie is
-// kept only as a fallback for existing clients.
+// Applies a 1–3 km privacy offset and creates the presence row. Raw
+// coordinates are never stored. Returns a per-tab bearer token.
 export async function POST(request: NextRequest) {
   const ip = clientIp(request);
   const limited = rateLimit(`join:${ip}`, 10, 60_000);
@@ -43,14 +39,16 @@ export async function POST(request: NextRequest) {
   const offset = applyPrivacyOffset(lat as number, lng as number);
   const sessionToken = newSessionToken();
 
-  await presenceDb.upsertOnJoin({
+  const created = await presenceDb.createOnJoin({
     id,
     authTokenHash: hashSessionToken(sessionToken),
     lat: offset.lat,
     lng: offset.lng,
   });
 
-  const response = NextResponse.json({ ok: true, sessionToken });
-  response.cookies.set(SESSION_COOKIE, id, sessionCookieOptions());
-  return response;
+  if (!created) {
+    return Response.json({ error: "session already exists" }, { status: 409 });
+  }
+
+  return Response.json({ ok: true, sessionToken });
 }

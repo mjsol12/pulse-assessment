@@ -277,7 +277,7 @@ sequenceDiagram
 
 | Endpoint | Handler | Service / DB |
 |----------|---------|--------------|
-| `POST /api/join` | `app/api/join/route.ts` | `presenceDb.upsertOnJoin` |
+| `POST /api/join` | `app/api/join/route.ts` | `presenceDb.createOnJoin` |
 | `GET /api/poll` | `app/api/poll/route.ts` | `getPollResponse` |
 | `POST /api/signal` | `app/api/signal/route.ts` | `deliverSignal` |
 | `POST /api/leave` | `app/api/leave/route.ts` | `presenceDb` cleanup |
